@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISTRA — Sistem Intelijen Strategis</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060810;
+    --surface: #0d1117;
+    --surface2: #131923;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #ff4444;
+    --accent3: #ffd700;
+    --green: #00ff88;
+    --text: #c9d1d9;
+    --text-dim: #556070;
+    --text-bright: #e6edf3;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SCAN LINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* TICKER */
+  .ticker-wrap {
+    background: var(--accent);
+    color: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    overflow: hidden;
+    height: 28px;
+    display: flex;
+    align-items: center;
+  }
+  .ticker-label {
+    background: var(--bg);
+    color: var(--accent);
+    padding: 0 16px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.2em;
+    font-size: 10px;
+  }
+  .ticker-track {
+    display: flex;
+    animation: ticker 40s linear infinite;
+    white-space: nowrap;
+  }
+  .ticker-track span { padding: 0 40px; }
+  .ticker-sep { color: rgba(0,0,0,0.4); }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 200px; height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 32px;
+    letter-spacing: 0.15em;
+    color: var(--text-bright);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .logo-sub {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.3em;
+    line-height: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo-accent { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  #clock {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+  }
+
+  /* LAYOUT */
+  .container { display: grid; grid-template-columns: 260px 1fr 300px; height: calc(100vh - 92px); }
+
+  /* SIDEBAR LEFT */
+  .sidebar-left {
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    overflow-y: auto;
+  }
+  .sidebar-section {
+    padding: 0 16px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .topic-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    text-align: left;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .topic-btn:hover { background: var(--surface2); border-color: var(--border); color: var(--text-bright); }
+  .topic-btn.active {
+    background: rgba(0,212,255,0.08);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .topic-btn.active::before {
+    content: '';
+    position: absolute;
+    left: -1px; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 60%;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+  }
+  .topic-icon { font-size: 14px; flex-shrink: 0; }
+  .topic-count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 10px;
+    color: var(--text-dim);
+  }
+  .topic-btn.active .topic-count { background: rgba(0,212,255,0.15); color: var(--accent); }
+
+  /* KEYWORD SEARCH */
+  .search-wrap {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-dim); }
+
+  /* MAIN FEED */
+  .main-feed {
+    overflow-y: auto;
+    padding: 0;
+  }
+  .feed-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .feed-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.1em;
+    color: var(--text-bright);
+  }
+  .feed-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .refresh-btn:hover { background: rgba(0,212,255,0.1); border-color: var(--accent); }
+  .spin { display: inline-block; }
+  .spinning { animation: spin 1s linear infinite; }
+  @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+  /* NEWS CARD */
+  .news-list { padding: 12px 20px; }
+  .news-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    animation: slideIn 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  @keyframes slideIn { to { opacity: 1; transform: translateY(0); } }
+  .news-card:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+    transform: translateX(3px);
+  }
+  .news-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+  .news-card:hover::before { background: var(--accent); }
+  .news-card.high::before { background: var(--accent2); }
+  .news-card.medium::before { background: var(--accent3); }
+  .news-card.low::before { background: var(--green); }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .card-source {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .card-time {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+  .card-priority {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+  .priority-high { background: rgba(255,68,68,0.15); color: var(--accent2); border: 1px solid rgba(255,68,68,0.3); }
+  .priority-medium { background: rgba(255,215,0,0.12); color: var(--accent3); border: 1px solid rgba(255,215,0,0.3); }
+  .priority-low { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
+
+  .card-title {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-bright);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-bottom {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .card-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .card-link {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  .card-link:hover { opacity: 1; }
+
+  /* LOADING STATE */
+  .loading-state {
+    padding: 60px 20px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .loading-bar {
+    width: 200px;
+    height: 2px;
+    background: var(--border);
+    margin: 16px auto;
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .loading-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    animation: load 1.5s ease-in-out infinite;
+  }
+  @keyframes load { 0%{width:0;margin-left:0} 50%{width:100%;margin-left:0} 100%{width:0;margin-left:100%} }
+
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 2;
+  }
+
+  /* SIDEBAR RIGHT */
+  .sidebar-right {
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .widget {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .widget-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  /* STAT BOXES */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 26px;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    color: var(--text-bright);
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    margin-top: 4px;
+  }
+  .stat-box.accent .stat-num { color: var(--accent); }
+  .stat-box.red .stat-num { color: var(--accent2); }
+  .stat-box.gold .stat-num { color: var(--accent3); }
+  .stat-box.green .stat-num { color: var(--green); }
+
+  /* TREND LIST */
+  .trend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text);
+  }
+  .trend-item:last-child { border-bottom: none; }
+  .trend-rank {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .trend-bar-wrap {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .trend-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
+
+  /* ACTIVITY LOG */
+  .log-item {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-time { color: var(--accent); flex-shrink: 0; }
+  .log-msg { color: var(--text-dim); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* NOTICE */
+  .api-notice {
+    background: rgba(255,215,0,0.06);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--accent3);
+    line-height: 1.8;
+    margin-bottom: 12px;
+    letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-label">◉ LIVE FEED</div>
+  <div class="ticker-track" id="tickerTrack">
+    <span>Memuat berita strategis...</span>
+    <span>Memuat berita strategis...</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <span>SISTRA</span>
+    <div class="logo-sub">
+      <span>SISTEM INTELIJEN</span>
+      <span>STRATEGIS <span class="logo-accent">v2.1</span></span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span><span class="status-dot"></span>SISTEM AKTIF</span>
+    <span id="clock">--:--:--</span>
+    <span id="lastUpdate" style="color:var(--text-dim)">—</span>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="container">
+
+  <!-- SIDEBAR KIRI -->
+  <div class="sidebar-left">
+    <div class="search-wrap">
+      <input class="search-input" id="searchInput" placeholder="🔍  cari topik / kata kunci..." oninput="filterNews()">
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">▸ Topik Strategis</div>
+      <button class="topic-btn active" onclick="loadTopic(this, 'Indonesia')" data-query="Indonesia terkini">
+        <span class="topic-icon">🇮🇩</span> Indonesia
+        <span class="topic-count" id="cnt-0">—</span>
+      </button>
+      <button class="topic-btn" onclick="loadTopic(this, 'Geopolitik')" data-query="geopolitik dunia 2025">
+        <span class="topic-icon">🌏</span> Geopolitik
+        <span class="topic-count" id="cnt-1">—</span>
+      </button>
+      <button class="topic-btn" onclick="loadTopic(this, 'Ekonomi & Perdagangan')" data-query="ekonomi perdagangan Indonesia">
+        <span class="topic-icon">📊</span> Ekonomi & Perdagangan
+        <span class="topic-count" id="cnt-2">—</span>
+      </button>
+      <button class="topic-btn" onclick="loadTopic(this, 'Pertahanan & Keamanan')" data-query="pertahanan keamanan nasional">
+        <span class="topic-icon">🛡️</span> Pertahanan & Keamanan
+        <span class="topic-count" id="cnt-3">—</span>
+      </button>
+      <button class="topic-btn" onclick="loadTopic(this, 'Teknologi & AI')" data-query="teknologi kecerdasan buatan AI">
+        <span class="topic-icon">🤖</span> Teknologi & AI
+        <span class="topic-count" id="cnt-4">—</span>
+      </button>
+      <button class="topic-btn" onclick="loadTopic(this, 'Timur Tengah')" data-query="Timur Tengah konflik terbaru">
+        <span class="topic-icon">🕌</span> Timur Tengah
+        <span class="topic-count" id="cnt-5">—</span>
+      </button>
+      <button class="topic-btn" onclick="loadTopic(this, 'Pendidikan')" data-query="pendidikan kebijakan Indonesia">
+        <span class="topic-icon">🎓</span> Pendidikan
+        <span class="topic-count" id="cnt-6">—</span>
+      </button>
+      <button class="topic-btn" onclick="loadTopic(this, 'Energi & Sumber Daya')" data-query="energi migas pertambangan Indonesia">
+        <span class="topic-icon">⚡</span> Energi & Sumber Daya
+        <span class="topic-count" id="cnt-7">—</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section" style="border-bottom:none">
+      <div class="sidebar-title">▸ Filter Prioritas</div>
+      <button class="topic-btn" onclick="filterPriority('all')" id="f-all" style="border-color:var(--accent);color:var(--accent)">
+        <span class="topic-icon">◈</span> Semua
+      </button>
+      <button class="topic-btn" onclick="filterPriority('high')" id="f-high">
+        <span class="topic-icon" style="color:var(--accent2)">▲</span> Prioritas Tinggi
+      </button>
+      <button class="topic-btn" onclick="filterPriority('medium')" id="f-medium">
+        <span class="topic-icon" style="color:var(--accent3)">◆</span> Prioritas Sedang
+      </button>
+      <button class="topic-btn" onclick="filterPriority('low')" id="f-low">
+        <span class="topic-icon" style="color:var(--green)">●</span> Umum
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN FEED -->
+  <div class="main-feed">
+    <div class="feed-header">
+      <div class="feed-title" id="feedTitle">INDONESIA</div>
+      <div class="feed-meta">
+        <span id="articleCount">— artikel</span>
+        <button class="refresh-btn" onclick="refreshFeed()">
+          <span class="spin" id="refreshIcon">↻</span> REFRESH
+        </button>
+      </div>
+    </div>
+    <div class="news-list" id="newsList">
+      <div class="loading-state">
+        <div>MENGAMBIL DATA DARI GOOGLE NEWS...</div>
+        <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+        <div style="margin-top:8px;font-size:9px;letter-spacing:0.2em">HARAP TUNGGU</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR KANAN -->
+  <div class="sidebar-right">
+
+    <div class="api-notice">
+      ⚠ DATA DIAMBIL VIA GOOGLE NEWS RSS<br>
+      Refresh otomatis setiap 5 menit.<br>
+      Klik judul untuk buka artikel asli.
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">▸ Statistik Sesi</div>
+      <div class="stat-grid">
+        <div class="stat-box accent"><div class="stat-num" id="statTotal">0</div><div class="stat-label">TOTAL</div></div>
+        <div class="stat-box red"><div class="stat-num" id="statHigh">0</div><div class="stat-label">TINGGI</div></div>
+        <div class="stat-box gold"><div class="stat-num" id="statMedium">0</div><div class="stat-label">SEDANG</div></div>
+        <div class="stat-box green"><div class="stat-num" id="statLow">0</div><div class="stat-label">UMUM</div></div>
+      </div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">▸ Kata Kunci Dominan</div>
+      <div id="trendList"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-align:center;padding:16px">Memuat...</div></div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">▸ Log Aktivitas</div>
+      <div id="activityLog">
+        <div class="log-item"><span class="log-time">INIT</span><span class="log-msg">Sistem dimulai</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────
+let allArticles = [];
+let filteredArticles = [];
+let currentPriority = 'all';
+let currentQuery = 'Indonesia terkini';
+let currentTopicName = 'INDONESIA';
+let topicCounts = {};
+let refreshInterval = null;
+
+// Keywords untuk klasifikasi prioritas
+const HIGH_KEYWORDS = ['krisis','perang','serangan','darurat','bencana','tsunami','gempa','sanksi','konflik','invasi','ledakan','teror','militer','nuklir','sanksi','embargo','kudeta'];
+const MEDIUM_KEYWORDS = ['kebijakan','perjanjian','negosiasi','diplomasi','ekonomi','inflasi','investasi','perdagangan','pemerintah','DPR','presiden','menteri','anggaran','reforma'];
+
+// ─── CLOCK ───────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── LOG ─────────────────────────────────────────
+function addLog(msg) {
+  const log = document.getElementById('activityLog');
+  const time = new Date().toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  item.innerHTML = `<span class="log-time">${time}</span><span class="log-msg">${msg}</span>`;
+  log.insertBefore(item, log.firstChild);
+  // Keep max 8 entries
+  while (log.children.length > 8) log.removeChild(log.lastChild);
+}
+
+// ─── FETCH NEWS VIA RSS2JSON ──────────────────────
+async function fetchNews(query) {
+  const encoded = encodeURIComponent(query);
+  // Google News RSS
+  const rssUrl = `https://news.google.com/rss/search?q=${encoded}&hl=id&gl=ID&ceid=ID:id`;
+  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&api_key=public&count=20`;
+
+  const res = await fetch(apiUrl);
+  if (!res.ok) throw new Error('Gagal mengambil data');
+  const data = await res.json();
+  if (data.status !== 'ok') throw new Error('RSS error');
+  return data.items || [];
+}
+
+// ─── CLASSIFY PRIORITY ───────────────────────────
+function classifyPriority(title, desc) {
+  const text = (title + ' ' + desc).toLowerCase();
+  for (const kw of HIGH_KEYWORDS) {
+    if (text.includes(kw)) return 'high';
+  }
+  for (const kw of MEDIUM_KEYWORDS) {
+    if (text.includes(kw)) return 'medium';
+  }
+  return 'low';
+}
+
+// ─── EXTRACT KEYWORDS ────────────────────────────
+function extractKeywords(articles) {
+  const stopWords = new Set(['yang','dan','di','ke','dari','untuk','dengan','ini','itu','pada','atau','tidak','dalam','adalah','akan','telah','juga','sudah','bisa','oleh','sebagai','sebuah','satu','the','and','for','with','dari','yang','ini','itu']);
+  const freq = {};
+  articles.forEach(a => {
+    const words = (a.title + ' ' + (a.description||'')).toLowerCase()
+      .replace(/<[^>]+>/g,'')
+      .split(/[\s,.\-!?;:()\[\]"']+/);
+    words.forEach(w => {
+      if (w.length > 4 && !stopWords.has(w) && isNaN(w)) {
+        freq[w] = (freq[w] || 0) + 1;
+      }
+    });
+  });
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8);
+}
+
+// ─── RENDER TRENDS ───────────────────────────────
+function renderTrends(articles) {
+  const kws = extractKeywords(articles);
+  const max = kws[0]?.[1] || 1;
+  const list = document.getElementById('trendList');
+  if (!kws.length) { list.innerHTML = '<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-align:center;padding:16px">Tidak ada data</div>'; return; }
+  list.innerHTML = kws.map(([word, count], i) => `
+    <div class="trend-item">
+      <span class="trend-rank">${i+1}</span>
+      <span style="flex:2;font-size:11px;text-transform:capitalize">${word}</span>
+      <div class="trend-bar-wrap" style="flex:1">
+        <div class="trend-bar" style="width:${Math.round(count/max*100)}%"></div>
+      </div>
+      <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);width:20px;text-align:right">${count}</span>
+    </div>
+  `).join('');
+}
+
+// ─── RENDER TICKER ───────────────────────────────
+function renderTicker(articles) {
+  const track = document.getElementById('tickerTrack');
+  const items = articles.slice(0,10).map(a =>
+    `<span>${a.title} <span class="ticker-sep">◆</span></span>`
+  ).join('');
+  track.innerHTML = items + items; // duplicate for seamless loop
+}
+
+// ─── TIME AGO ────────────────────────────────────
+function timeAgo(dateStr) {
+  const diff = (Date.now() - new Date(dateStr)) / 1000;
+  if (diff < 60) return `${Math.round(diff)}d lalu`;
+  if (diff < 3600) return `${Math.round(diff/60)}m lalu`;
+  if (diff < 86400) return `${Math.round(diff/3600)}j lalu`;
+  return `${Math.round(diff/86400)}h lalu`;
+}
+
+// ─── RENDER CARDS ────────────────────────────────
+function renderCards(articles) {
+  const list = document.getElementById('newsList');
+
+  if (!articles.length) {
+    list.innerHTML = '<div class="empty-state">TIDAK ADA ARTIKEL<br>YANG SESUAI FILTER</div>';
+    return;
+  }
+
+  let high=0, med=0, low=0;
+  list.innerHTML = articles.map((a, i) => {
+    const priority = classifyPriority(a.title, a.description||'');
+    const pLabel = priority==='high'?'▲ PRIORITAS TINGGI': priority==='medium'?'◆ PERHATIAN':'● UMUM';
+    const pClass = `priority-${priority}`;
+    if(priority==='high') high++;
+    else if(priority==='medium') med++;
+    else low++;
+    const source = a.author || a.source || 'Google News';
+    const desc = (a.description||'').replace(/<[^>]+>/g,'').substring(0,140);
+    const delay = i * 40;
+    return `
+      <div class="news-card ${priority}" style="animation-delay:${delay}ms" onclick="window.open('${a.link}','_blank')">
+        <div class="card-top">
+          <span class="card-source">${source}</span>
+          <span class="card-priority ${pClass}">${pLabel}</span>
+          <span class="card-time">${timeAgo(a.pubDate)}</span>
+        </div>
+        <div class="card-title">${a.title}</div>
+        <div class="card-desc">${desc}</div>
+        <div class="card-bottom">
+          <span class="card-tag">${currentTopicName}</span>
+          <a class="card-link" href="${a.link}" target="_blank" onclick="event.stopPropagation()">BUKA ARTIKEL →</a>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('statTotal').textContent = articles.length;
+  document.getElementById('statHigh').textContent = high;
+  document.getElementById('statMedium').textContent = med;
+  document.getElementById('statLow').textContent = low;
+  document.getElementById('articleCount').textContent = `${articles.length} artikel`;
+}
+
+// ─── LOAD TOPIC ──────────────────────────────────
+async function loadTopic(btn, topicName) {
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  currentQuery = btn ? btn.dataset.query : currentQuery;
+  currentTopicName = topicName.toUpperCase();
+  document.getElementById('feedTitle').textContent = currentTopicName;
+  currentPriority = 'all';
+
+  document.getElementById('newsList').innerHTML = `
+    <div class="loading-state">
+      <div>MENGAMBIL DATA: ${topicName.toUpperCase()}</div>
+      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+    </div>`;
+
+  addLog(`Memuat topik: ${topicName}`);
+
+  try {
+    const items = await fetchNews(currentQuery);
+    allArticles = items;
+    filteredArticles = items;
+
+    // Update count badge
+    if (btn) {
+      const idx = Array.from(document.querySelectorAll('.topic-btn')).indexOf(btn);
+      const countEl = document.getElementById(`cnt-${idx}`);
+      if (countEl) countEl.textContent = items.length;
+    }
+
+    renderCards(filteredArticles);
+    renderTrends(allArticles);
+    renderTicker(allArticles);
+
+    const now = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('lastUpdate').textContent = `UPDATE ${now}`;
+    addLog(`${items.length} artikel dimuat`);
+
+  } catch(e) {
+    document.getElementById('newsList').innerHTML = `
+      <div class="empty-state">
+        ⚠ GAGAL MEMUAT DATA<br><br>
+        <span style="font-size:9px">Kemungkinan penyebab:<br>
+        - Koneksi internet terputus<br>
+        - API rate limit tercapai<br>
+        Coba refresh beberapa saat lagi.</span>
+      </div>`;
+    addLog(`Error: ${e.message}`);
+  }
+}
+
+// ─── FILTER BY PRIORITY ──────────────────────────
+function filterPriority(level) {
+  currentPriority = level;
+  ['all','high','medium','low'].forEach(l => {
+    document.getElementById(`f-${l}`).style.borderColor = 'transparent';
+    document.getElementById(`f-${l}`).style.color = 'var(--text)';
+  });
+  document.getElementById(`f-${level}`).style.borderColor = 'var(--accent)';
+  document.getElementById(`f-${level}`).style.color = 'var(--accent)';
+
+  filteredArticles = level === 'all' ? allArticles :
+    allArticles.filter(a => classifyPriority(a.title, a.description||'') === level);
+  renderCards(filteredArticles);
+  addLog(`Filter: ${level}`);
+}
+
+// ─── SEARCH FILTER ───────────────────────────────
+function filterNews() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  filteredArticles = allArticles.filter(a =>
+    a.title.toLowerCase().includes(q) || (a.description||'').toLowerCase().includes(q)
+  );
+  renderCards(filteredArticles);
+}
+
+// ─── REFRESH ─────────────────────────────────────
+async function refreshFeed() {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spinning');
+  await loadTopic(document.querySelector('.topic-btn.active'), currentTopicName);
+  icon.classList.remove('spinning');
+}
+
+// ─── AUTO REFRESH EVERY 5 MIN ────────────────────
+function startAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    addLog('Auto-refresh dimulai');
+    refreshFeed();
+  }, 5 * 60 * 1000);
+}
+
+// ─── INIT ────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadTopic(document.querySelector('.topic-btn.active'), 'Indonesia');
+  startAutoRefresh();
+});
+</script>
+</body>
+</html>
